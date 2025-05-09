@@ -137,3 +137,17 @@ Funcion generate-icebreakers
 ## Rollout (feature flags, straight to prod, etc)
 
 ## Product analytics (eventos y que gráficos vamos a tener)
+
+## Ejemplos de ejecucion
+
+URL del perfil de LinkedIn del emisor: 
+https://www.linkedin.com/in/mateo-lardiez/
+
+Problema que resolvés:
+Las empresas suelen tener dificultades para automatizar tareas repetitivas en LinkedIn sin infringir políticas de uso.
+
+Solución que ofrecés:
+Ofrecemos una herramienta que automatiza mensajes y conexiones en LinkedIn de forma segura y personalizada, respetando los límites de la plataforma.
+
+URL del perfil objetivo (persona a contactar):
+https://www.linkedin.com/in/sofia-hernandez/
