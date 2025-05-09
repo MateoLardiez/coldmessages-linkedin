@@ -108,20 +108,36 @@ export default function LinkedInForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    
+    // Validación básica - solo verificamos que los campos no estén vacíos
+    if (!formData.senderProfileUrl || !formData.problem || !formData.solution || !formData.targetProfileUrl) {
+      throw new Error("Por favor completa todos los campos")
+    }
 
     try {
-      // Validación básica - solo verificamos que los campos no estén vacíos
-      if (!formData.senderProfileUrl || !formData.problem || !formData.solution || !formData.targetProfileUrl) {
-        throw new Error("Por favor completa todos los campos")
+        const response = await fetch("/api/generate-icebreakers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+    
+        const result = await response.json()
+        setMessages(result)
+      } catch (err) {
+        setError("Ocurrió un error al generar los mensajes")
+      } finally {
+        setLoading(false)
       }
 
-      const result = await generateIceBreakers(formData)
-      setMessages(result)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error al generar los mensajes")
-    } finally {
-      setLoading(false)
-    }
+    // try {
+
+    //   const result = await generateIceBreakers(formData)
+    //   setMessages(result)
+    // } catch (err) {
+    //   setError(err instanceof Error ? err.message : "Ocurrió un error al generar los mensajes")
+    // } finally {
+    //   setLoading(false)
+    // }
   }
 
   const copyToClipboard = (text: string) => {
