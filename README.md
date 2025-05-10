@@ -120,6 +120,8 @@ Funcion generate-icebreakers
 
 ## Link a v0
 
+https://v0.dev/chat/linkedin-message-generator-2ESuJkRH7dr
+
 ## External dependencies
 
 ## Costos
@@ -127,6 +129,13 @@ Funcion generate-icebreakers
 ## Arquitectura de datos
 
 ## API Reference
+
+Utilizacion de API de OpenAI
+- POST request enviando el prompt con su respectiva data adjunta
+
+Utilizacion de API de LinkedIn
+- GET Profile Data By Url -> Obtener la data general del perfil.
+- GET Profile's Posts -> Obtener los posts para buscar informacion relevante
 
 ## High level sequence diagrams
 
