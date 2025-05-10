@@ -56,7 +56,62 @@ export async function fetchLinkedInPosts(username) {
     }
 }
 
-// GET user comments by username
+// GET user post and comments by urn
+export async function fetchLinkedInPostAndComments(urn) {
+    const url = `https://${process.env.RAPIDAPI_HOST}/get-profile-post-and-comments?urn=${urn}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+            'x-rapidapi-host': process.env.RAPIDAPI_HOST
+        }
+    };
+
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("Post and comments data:", data);
+
+        const postText = data.data?.post?.text || "Post text not available";
+        const username = data.data?.post?.author?.username || "Username not available";
+
+        console.log("Post text:", postText);
+        console.log("Username:", username);
+        return { postText, username };
+    } catch (error) {
+        console.error("Error fetching LinkedIn post and comments: ", error);
+        throw error;
+    }
+}
+
+// GET user profile by username
+export async function fetchLinkedInProfileByUsername(username) {
+    const url = `https://${process.env.RAPIDAPI_HOST}/?username=${username}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+            'x-rapidapi-host': process.env.RAPIDAPI_HOST
+        }
+    };
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("LinkedIn profile by username:", data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching LinkedIn profile by username: ", error);
+        throw error; // Re-lanzar el error para manejarlo en otro lugar si es necesario
+    }
+}
+
+// GET user comments by username (interactions)
 export async function fetchLinkedInComments(username) {
     const url = `https://${process.env.RAPIDAPI_HOST}/get-profile-comments?username=${username}`;
     const options = {

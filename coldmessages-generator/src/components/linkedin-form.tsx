@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { generateIceBreakers } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
