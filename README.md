@@ -136,7 +136,9 @@ Utilizacion de API de OpenAI
 Utilizacion de API de LinkedIn
 - GET Profile Data By Url -> Obtener la data general del perfil.
 - GET Profile Post -> Obtener el texto del post que hizo un perfil target
+- GET Profile Data -> Obener la data general del perfil a partir del username
 - GET Profile's Posts -> Obtener los posts para buscar informacion relevante
+- GET Profile's Comments -> Obtener los comentarios que realizo el usuario en distintos posts
 
 ## High level sequence diagrams
 

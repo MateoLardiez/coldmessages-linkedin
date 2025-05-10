@@ -5,6 +5,7 @@ import { fetchLinkedInComments } from "../linkedin"
 import { fetchLinkedInPostAndComments } from "../linkedin"
 import {fetchLinkedInProfileByUsername} from "../linkedin"
 
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
@@ -85,7 +86,7 @@ function createPromptFromPost(senderProfile, problem, solution, textPost, target
     Contenido del post del receptor:
     - "${textPost}"
 
-    Y además, estos datos del emisor para alinear el mensaje con su propósito:
+    Y además, estos datos del emisor para alinear el mensaje con su propósito. Son los datos mas importantes a tener en cuenta:
     - Problema que resuelve: ${problem}
     - Solución que ofrece: ${solution}
 
@@ -108,8 +109,10 @@ async function handlePostLink(senderProfile, problem, solution, postUrn) {
 
 async function handleProfileLink(senderProfile, targetProfileUrl, problem, solution) {
   const targetProfile = await fetchLinkedInProfile(targetProfileUrl);
-  //const targetProfilePostsTexts = await fetchLinkedInPosts(targetProfile.username);
-  //const targetProfileCommentsTexts = await fetchLinkedInComments(targetProfile.username);
+
+  if (!targetProfile || !targetProfile.username) {
+    throw new Error("El perfil objetivo no existe o no se pudo obtener");
+  }
 
   const prompt = createPromptFromProfile(
     senderProfile,
@@ -121,55 +124,64 @@ async function handleProfileLink(senderProfile, targetProfileUrl, problem, solut
 }
 
 export async function POST(req) {
-    try {
-      const body = await req.json()
-      const { senderProfileUrl, targetProfileUrl, problem, solution } = body
-  
-      if (!senderProfileUrl || !targetProfileUrl || !problem || !solution) {
-        return new Response(JSON.stringify({ error: "Faltan campos obligatorios" }), {
-          status: 400,
-        })
-      }
-      
-      const senderProfile = await fetchLinkedInProfile(senderProfileUrl)
-  
-      let isProfileUrl = targetProfileUrl.includes("/in/");
-      let postUrn = null;
-      let prompt = null;
-      if (!isProfileUrl) {
-        const match = targetProfileUrl.match(/urn:li:activity:(\d+)/);
-        if (match) {
-          postUrn = match[1]; // Extract only the number
-          console.log("Post URN:", postUrn);
-          prompt = await handlePostLink(senderProfile, problem, solution, postUrn);
-        } else {
-          return new Response(JSON.stringify({ error: "URL de publicación no válida" }), {
+  try {
+    const body = await req.json();
+    const { senderProfileUrl, targetProfileUrl, problem, solution } = body;
+
+    if (!senderProfileUrl || !targetProfileUrl || !problem || !solution) {
+      return new Response(JSON.stringify({ error: "Faltan campos obligatorios" }), {
         status: 400,
-          });
-        }
-      }
-      else {
-        prompt = await handleProfileLink(senderProfile, targetProfileUrl, problem, solution);
-      }
-      console.log("Prompt to GPT:", prompt);
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
-      })
-
-      const raw = response.choices[0].message.content
-      const messages = raw
-        .split(/\n+/)
-        .filter(line => line.trim())
-        .map(line => line.replace(/^\d+[\).\s]*/, "").trim())
-
-      return Response.json(messages)
-    } catch (error) {
-      return new Response(JSON.stringify({ error: "Error interno del servidor" }), {
-        status: 500,
-      })
+      });
     }
+
+    const senderProfile = await fetchLinkedInProfile(senderProfileUrl);
+
+    if (!senderProfile || !senderProfile.username) {
+      return new Response(JSON.stringify({ error: "El perfil del remitente no existe o no se pudo obtener" }), {
+        status: 400,
+      });
+    }
+
+    let isProfileUrl = targetProfileUrl.includes("/in/");
+    let postUrn = null;
+    let prompt = null;
+
+    if (!isProfileUrl) {
+      const match = targetProfileUrl.match(/urn:li:activity:(\d+)/);
+      if (match) {
+        postUrn = match[1];
+        prompt = await handlePostLink(senderProfile, problem, solution, postUrn);
+      } else {
+        return new Response(JSON.stringify({ error: "URL no valida" }), {
+          status: 400,
+        });
+      }
+    } else {
+      try {
+        prompt = await handleProfileLink(senderProfile, targetProfileUrl, problem, solution);
+      } catch (error) {
+        return new Response(JSON.stringify({ error: "El perfil objetivo no existe o no se pudo obtener" }), {
+          status: 404,
+        });
+      }
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.8,
+    });
+
+    const raw = response.choices[0].message.content;
+    const messages = raw
+      .split(/\n+/)
+      .filter((line) => line.trim())
+      .map((line) => line.replace(/^\d+[\).\s]*/, "").trim());
+
+    return Response.json(messages);
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Error interno del servidor" }), {
+      status: 500,
+    });
   }
-  
+}
