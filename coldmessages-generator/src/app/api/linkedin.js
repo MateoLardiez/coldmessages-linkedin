@@ -17,10 +17,8 @@ export async function fetchLinkedInProfile(profileUrl) {
         if (!response.ok) {
             throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
-        //const result = await response.text();
         const data = await response.json();
-        console.log("Linkedin profile text:", data);
-        //console.log("LinkedIn Profile json:", data)
+        // console.log("Linkedin profile text:", data);
         return data
     } catch (error) {
         console.error("Error fetching LinkedIn profile: ", error);
@@ -47,11 +45,11 @@ export async function fetchLinkedInPostAndComments(urn) {
             throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("Post and comments data:", data);
+        // console.log("Post and comments data:", data);
         const postText = data.data?.post?.text || "Post text not available";
         const username = data.data?.post?.author?.username || "Username not available";
-        console.log("Post text:", postText);
-        console.log("Username:", username);
+        // console.log("Post text:", postText);
+        // console.log("Username:", username);
         return { postText, username };
     } catch (error) {
         console.error("Error fetching LinkedIn post and comments: ", error);
@@ -76,7 +74,7 @@ export async function fetchLinkedInProfileByUsername(username) {
             throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("LinkedIn profile by username:", data);
+        // console.log("LinkedIn profile by username:", data);
         return data;
     } catch (error) {
         console.error("Error fetching LinkedIn profile by username: ", error);
@@ -109,7 +107,7 @@ export async function fetchLinkedInComments(username) {
             commentsDict[postText] = commentText;
         });
 
-        console.log("Comentarios extraídos:", commentsDict);
+        // console.log("Comentarios extraídos:", commentsDict);
         return commentsDict;
     } catch (error) {
         console.error("Error fetching LinkedIn comments: ", error);
@@ -136,8 +134,8 @@ export async function fetchLinkedInPosts(username) {
         const data = await response.json();
         // Extraer los textos de los posts
         const postsTexts = data.data.map(post => post.text);
-        console.log("LinkedIn profile posts:", data);
-        console.log("LinkedIn profile posts texts:", postsTexts);
+        // console.log("LinkedIn profile posts:", data);
+        // console.log("LinkedIn profile posts texts:", postsTexts);
         return postsTexts;
     } catch (error) {
         console.error("Error fetching LinkedIn posts: ", error);

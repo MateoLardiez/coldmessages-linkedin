@@ -103,7 +103,7 @@ function createPromptFromPost(senderProfile, problem, solution, textPost, target
 async function handlePostLink(senderProfile, problem, solution, postUrn) {
   const { postText, username } = await fetchLinkedInPostAndComments(postUrn);
   const targetProfile = await fetchLinkedInProfileByUsername(username)
-  const promptToGpt = createPromptFromPost(postText, problem, solution, postText, targetProfile);
+  const promptToGpt = createPromptFromPost(senderProfile, problem, solution, postText, targetProfile);
   return promptToGpt;
 }
 
@@ -160,7 +160,7 @@ export async function POST(req) {
       try {
         prompt = await handleProfileLink(senderProfile, targetProfileUrl, problem, solution);
       } catch (error) {
-        return new Response(JSON.stringify({ error: "El perfil objetivo no existe o no se pudo obtener" }), {
+        return new Response(JSON.stringify({ error: "La url del perfil objetivo no existe o no se pudo obtener" }), {
           status: 404,
         });
       }
