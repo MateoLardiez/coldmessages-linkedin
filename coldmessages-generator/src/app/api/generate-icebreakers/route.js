@@ -61,7 +61,8 @@ function createPromptFromProfile(senderProfile, problem, solution, targetProfile
     - Solución ofrecida: ${solution}
     
     El objetivo es generar mensajes que sean atractivos y relevantes para el perfil objetivo, teniendo en cuenta su industria y necesidades.
-    Los icebreakers deben ser breves, naturales, y facilitar una respuesta humana. Devolvé solo los mensajes en formato lista.
+    Los icebreakers deben ser breves, naturales, y facilitar una respuesta humana. Debe ser lo mas humano posible, teniendo en cuenta el estilo del
+    perfil emisor. Devolvé solo los mensajes en formato lista, sin agregar ni introduccion ni conclusion.
   `;
 }
 
@@ -96,7 +97,9 @@ function createPromptFromPost(senderProfile, problem, solution, textPost, target
     - El mensaje puede sembrar una conversación ligera o una posible conexión profesional relacionada al problema/solución que ofrece el emisor.
     - No repitas la estructura exacta entre los 3 mensajes. Variá estilo y acercamiento.
 
-    Devolvé solo los mensajes como una lista numerada. No agregues introducción ni conclusión.
+    El objetivo es generar mensajes que sean atractivos y relevantes para el perfil objetivo, teniendo en cuenta su industria y necesidades.
+    Los icebreakers deben ser breves, naturales, y facilitar una respuesta humana. Debe ser lo mas humano posible, teniendo en cuenta el estilo del
+    perfil emisor. Devolvé solo los mensajes en formato lista, sin agregar ni introduccion ni conclusion.
   `;
 }
 
@@ -123,6 +126,62 @@ async function handleProfileLink(senderProfile, targetProfileUrl, problem, solut
   return prompt;
 }
 
+async function generateGPTResponse(prompt) {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.8,
+  });
+
+  const raw = response.choices[0].message.content;
+
+}
+
+async function manageRequest(senderProfileUrl, targetProfileUrl, problem, solution) {
+  const senderProfile = await fetchLinkedInProfile(senderProfileUrl);
+  
+  if (!senderProfile || !senderProfile.username) {
+    return new Response(JSON.stringify({ error: "El perfil del remitente no existe o no se pudo obtener" }), {
+      status: 400,
+    });
+  }
+  
+  let isProfileUrl = targetProfileUrl.includes("/in/");
+  let postUrn = null;
+  let prompt = null;
+  
+  if (!isProfileUrl) {
+    const match = targetProfileUrl.match(/urn:li:activity:(\d+)/);
+    if (match) {
+      postUrn = match[1];
+      prompt = await handlePostLink(senderProfile, problem, solution, postUrn);
+    } else {
+      return new Response(JSON.stringify({ error: "URL no valida" }), {
+        status: 400,
+      });
+    }
+  } else {
+    try {
+      prompt = await handleProfileLink(senderProfile, targetProfileUrl, problem, solution);
+    } catch (error) {
+      return new Response(JSON.stringify({ error: "La url del perfil objetivo no existe o no se pudo obtener" }), {
+        status: 404,
+      });
+    }
+  }
+  
+  const raw = await generateGPTResponse(prompt);
+  
+  const messages = raw
+    .split(/\n+/)
+    .filter((line) => line.trim())
+    .map((line) => line.replace(/^\d+[\).\s]*/, "").trim());
+
+  return messages;
+}
+
+
+// Manage the POST request to generate icebreakers. Delegates the logic to manageRequest function.
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -133,50 +192,24 @@ export async function POST(req) {
         status: 400,
       });
     }
-
-    const senderProfile = await fetchLinkedInProfile(senderProfileUrl);
-
-    if (!senderProfile || !senderProfile.username) {
-      return new Response(JSON.stringify({ error: "El perfil del remitente no existe o no se pudo obtener" }), {
+    const messages = await manageRequest(senderProfileUrl, targetProfileUrl, problem, solution);
+    if (!messages || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "No se generaron mensajes" }), {
         status: 400,
       });
     }
-
-    let isProfileUrl = targetProfileUrl.includes("/in/");
-    let postUrn = null;
-    let prompt = null;
-
-    if (!isProfileUrl) {
-      const match = targetProfileUrl.match(/urn:li:activity:(\d+)/);
-      if (match) {
-        postUrn = match[1];
-        prompt = await handlePostLink(senderProfile, problem, solution, postUrn);
-      } else {
-        return new Response(JSON.stringify({ error: "URL no valida" }), {
-          status: 400,
-        });
-      }
-    } else {
-      try {
-        prompt = await handleProfileLink(senderProfile, targetProfileUrl, problem, solution);
-      } catch (error) {
-        return new Response(JSON.stringify({ error: "La url del perfil objetivo no existe o no se pudo obtener" }), {
-          status: 404,
-        });
-      }
+    
+    // 2 validaciones innecesarias ?
+    if (messages.length > 3) {
+      return new Response(JSON.stringify({ error: "Se generaron más de 3 mensajes" }), {
+        status: 400,
+      });
     }
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.8,
-    });
-
-    const raw = response.choices[0].message.content;
-    const messages = raw
-      .split(/\n+/)
-      .filter((line) => line.trim())
-      .map((line) => line.replace(/^\d+[\).\s]*/, "").trim());
+    if (messages.length < 3) {
+      return new Response(JSON.stringify({ error: "Se generaron menos de 3 mensajes" }), {
+        status: 400,
+      });
+    }
 
     return Response.json(messages);
   } catch (error) {
